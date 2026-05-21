@@ -25,7 +25,7 @@ Hey, Netology
 Предоставьте ответ в виде ссылки на https://hub.docker.com/username_repo>/custom-nginx/general .
 
 
-### Решение
+### Решение:
 
 Готовый образ по ссылке: https://hub.docker.com/r/mxkostix/custom-nginx/tags
 
@@ -40,8 +40,9 @@ COPY index.html /usr/share/nginx/html/index.html
 
 Далее:
 ```
-docker build -t my-nginx:1.0.0 .
-docker run -d -p 80:80 my-nginx:1.0.0
+docker build -t mxkostix/custom-nginx:1.0.0 .
+docker run -d -p 80:80 --name custom-nginx mxkostix/custom-nginx:1.0.0
+docker push mxkostix/custom-nginx:1.0.0
 ```
 
 
@@ -63,7 +64,7 @@ docker run -d -p 80:80 my-nginx:1.0.0
 В качестве ответа приложите скриншоты консоли, где видно все введенные команды и их вывод.
 
 
-### Решение
+### Решение:
 
 Скрин консоли:
 
@@ -89,7 +90,7 @@ docker run -d -p 80:80 my-nginx:1.0.0
 В качестве ответа приложите скриншоты консоли, где видно все введенные команды и их вывод.
 
 
-### Решение
+### Решение:
 
 ![Attach ctrl-c](./img/3_1_attach.jpg)
 
@@ -114,8 +115,85 @@ Ctrl-C: контейнер остановился, потому что посл�
 
 В качестве ответа приложите скриншоты консоли, где видно все введенные команды и их вывод.
 
-### Решение
+### Решение:
 
 ![screen1](./img/4_1_screen.jpg)
 ![screen2](./img/4_2_screen.jpg)
 
+
+### Задание 5
+
+
+1. Создайте отдельную директорию(например /tmp/netology/docker/task5) и 2 файла внутри него. "compose.yaml" с содержимым:
+
+```
+version: "3"
+services:
+  portainer:
+    network_mode: host
+    image: portainer/portainer-ce:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+```
+
+"docker-compose.yaml" с содержимым:
+
+```
+version: "3"
+services:
+  registry:
+    image: registry:2
+
+    ports:
+    - "5000:5000"
+```
+
+И выполните команду "docker compose up -d". Какой из файлов был запущен и почему? (подсказка: https://docs.docker.com/compose/compose-application-model/#the-compose-file )
+
+2. Отредактируйте файл compose.yaml так, чтобы были запущенны оба файла. (подсказка: https://docs.docker.com/compose/compose-file/14-include/)
+
+3. Выполните в консоли вашей хостовой ОС необходимые команды чтобы залить образ custom-nginx как custom-nginx:latest в запущенное вами, локальное registry. Дополнительная документация: https://distribution.github.io/distribution/about/deploying/
+
+4. Откройте страницу "https://127.0.0.1:9000" и произведите начальную настройку portainer.(логин и пароль адмнистратора)
+
+5. Откройте страницу "http://127.0.0.1:9000/#!/home", выберите ваше local окружение. Перейдите на вкладку "stacks" и в "web editor" задеплойте следующий компоуз:
+
+version: '3'
+
+services:
+  nginx:
+    image: 127.0.0.1:5000/custom-nginx
+    ports:
+      - "9090:80"
+
+6. Перейдите на страницу "http://127.0.0.1:9000/#!/2/docker/containers", выберите контейнер с nginx и нажмите на кнопку "inspect". В представлении <> Tree разверните поле "Config" и сделайте скриншот от поля "AppArmorProfile" до "Driver".
+
+7. Удалите любой из манифестов компоуза(например compose.yaml). Выполните команду "docker compose up -d". Прочитайте warning, объясните суть предупреждения и выполните предложенное действие. Погасите compose-проект ОДНОЙ(обязательно!!) командой.
+
+В качестве ответа приложите скриншоты консоли, где видно все введенные команды и их вывод, файл compose.yaml , скриншот portainer c задеплоенным компоузом.
+
+### Решение:
+
+![compose up](./img/5_1_compose_up.jpg)
+
+Был запущен только compose.yaml, потому что согласно официальной документации Docker Compose предпочтение отдается compose.yaml или compose.yml: The default path for a Compose file is compose.yaml (preferred) or compose.yml that is placed in the working directory. Compose also supports docker-compose.yaml and docker-compose.yml for backwards compatibility of earlier versions. If both files exist, Compose prefers the canonical compose.yaml.
+
+Чтобы запустились оба файла, добавляем в compose.yaml строку:
+```
+include:
+  - docker-compose.yaml
+```
+
+![include](./img/5_2_compose_up.jpg)
+
+![push](./img/5_3_push.jpg)
+
+![inspect](./img/5_4_inspect.jpg)
+
+После удаления compose.yaml:
+
+![orphaned](./img/5_4_orphaned.jpg)
+
+Docker Compose обнаружил сиротский контейнер task5-portainer-1, который был создан ранее из файла compose.yaml, но сейчас файл удалён. Контейнер больше не управляется текущей конфигурацией.
+
+![Remove orphaned](./img/5_5_remove_orphaned.jpg)
